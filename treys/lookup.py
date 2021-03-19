@@ -278,6 +278,46 @@ class LookupTableThreeCards(object):
     MAX_TWO_PAIR = 1608
     MAX_PAIR = 1894
 
+    def __init__(self):
+        self.build()
+
+    def build(self):
+        """
+        Builds member tables from scratch
+        """
+        self.flush = OrderedDict()
+        self.unsuited = OrderedDict()
+        self.build_flushes()  # this will call straights and high cards method + reuse some of the bit sequences
+        self.build_multiples()
+
+    def build_flushes(self):
+        """
+        Straight flushes and flushes.
+
+        Lookup is done on 13 bit integer (2^13 > 7462):
+        xxxbbbbb bbbbbbbb => integer hand index
+        """
+        # straight flushes in rank order
+
+        #we start creating the sequence of cards that draw the same straight flush
+        sequence = [7] #7 = int('0b111',2)
+        gen = next_word(sequence[0])
+
+        for i in range(9):
+            f = next(gen)
+            sequence.append(f)
+
+        #Ordering from top to bottom
+        sequence.reverse()
+
+        straight_flushes = []
+        for i in range(8,-1,-1):
+            for a in sequence:
+                straight_flushes.append(a << i)
+
+
+
+
 def next_word(bits):
     """
     Gets the so-called "next lexographic bit sequence" from a starting word :bits
