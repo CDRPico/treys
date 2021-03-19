@@ -122,7 +122,7 @@ class LookupTable(object):
         # rank 1 = Royal Flush!
         rank = 1
         for sf in straight_flushes:
-            product = card.product_from_rankbits(sf)
+            _, product = card.product_from_rankbits(sf)
             self.flush[product] = rank
             rank += 1
 
@@ -130,7 +130,7 @@ class LookupTable(object):
         # is the worst rank that a full house can have (2,2,2,3,3)
         rank = LookupTable.MAX_FULL_HOUSE + 1
         for f in flushes:
-            product = card.product_from_rankbits(f)
+            _, product = card.product_from_rankbits(f)
             self.flush[product] = rank
             rank += 1
 
@@ -146,12 +146,12 @@ class LookupTable(object):
         """
         rank = LookupTable.MAX_FLUSH + 1
         for s in straights:
-            product = card.product_from_rankbits(s)
+            _, product = card.product_from_rankbits(s)
             self.unsuited[product] = rank
             rank += 1
         rank = LookupTable.MAX_PAIR + 1
         for h in highcards:
-            product = card.product_from_rankbits(h)
+            _, product = card.product_from_rankbits(h)
             self.unsuited[product] = rank
             rank += 1
 
@@ -238,6 +238,46 @@ class LookupTable(object):
                 rank += 1
 
 
+class LookupTableThreeCards(object):
+    """
+    Map of draws when having three cards (flop)
+    Used to evalute when the player has straight flush, flush, straight backdoor
+
+    TODO: evaluate when user has trips or one pair to get a poker/full
+    """
+    #all possible combos that can yield each type of hand after the river
+
+    """
+       Number of Distinct Combos that can yield the mentioned hand:
+
+       Straight Flush   100 = 5C3 * 10
+       Four of a Kind   169 = 13 + 13*12  
+       Full Houses      169 = 13 + 13*12  
+       Flush            186 = 13C3 - (5C3 * 10)
+       Straight         100 = 5C3 * 10
+       Three of a Kind  442 = 13*12 + 13C3    
+       Two Pair         442 = 13*12 + 13C3
+       One Pair         286 = 13C3      
+       -------------------------
+       TOTAL            1894
+
+       There are a total of 1894 combos which can improve the current 3 cards hands
+       Notice we discard high card, because it is not an interesting case
+       We also discard combinations of suits because if they are not suited it is not important
+       the suit combination
+       
+       this is a sort of qualification for the existent combos, base on their improvement potential
+    """
+
+    MAX_STRAIGHT_FLUSH = 100
+    MAX_FOUR_OF_A_KIND = 269
+    MAX_FULL_HOUSE = 438
+    MAX_FLUSH = 624
+    MAX_STRAIGHT = 724
+    MAX_THREE_OF_A_KIND = 1166
+    MAX_TWO_PAIR = 1608
+    MAX_PAIR = 1894
+
 def next_word(bits):
     """
     Gets the so-called "next lexographic bit sequence" from a starting word :bits
@@ -257,4 +297,3 @@ def next_word(bits):
         # XXX math hack - '/' => '//'
         w = t | ((((t & -t) // (w & -w)) >> 1) - 1)
         yield w
-

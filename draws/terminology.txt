@@ -1,0 +1,47 @@
+Backdoor draw
+It is used to refer a dra which needs two specific cards in turn and river
+It can be: backdoor-straight, backdoor-flush
+
+Gutshot
+Inside straight draw
+
+Open-ended
+The player has four of five cards needed for a straight that can be completed at either end
+
+Flush-draw
+The player has four cards of the same suit and need only one to complete the draw and make five cards of the same suit
+
+Full-trips
+The player has trips and is looking for some card to double up in the board
+
+Full-paired
+The player has two o more pairs and is looking for one of them doubling up in the board to get a full house
+
+It is useful to consider the best hands made from 3 and 4 cards
+
+With 3 cards, top hands:
+- trips
+- pair
+- high card
+There are some hands that are not good enough but might improve considering backdoor draw
+- 3 continuous suited cards
+- 3 suited cards
+- 3 connected cards
+Also any hand could get a pair or two pairs runner-runner
+
+With 4 cards:
+- poker
+- trips
+- three of a kind
+- two-pairs
+- pair
+- high card
+draws that can improve the hand of the player
+- 4 continuous suited cards
+- 4 suited cards
+- 4 connected cards
+    Here we have gutshot draw and open-ended straight draw
+- trips with pocket on hand
+- three of a kind
+- two pairs having already one
+- A pair

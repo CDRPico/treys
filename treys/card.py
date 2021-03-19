@@ -96,9 +96,13 @@ def product_from_hand(cards):
     Expects a list of cards in integer form.
     """
     product = 1
+    card_symbols = []
+    i = 0
     for n in cards:
         product *= (n & 0xFF)
-    return product
+        card_symbols.append(RANKS[-(i+1)])
+        i += 1
+    return card_symbols, product
 
 def product_from_rankbits(rankbits):
     """
@@ -123,11 +127,13 @@ def product_from_rankbits(rankbits):
 
     """
     product = 1
+    card_symbols = []
     for i in range(0,13):
         # if the ith bit is set
         if rankbits & (1 << i):
             product *= PRIMES[i]
-    return product
+            card_symbols.append(RANKS[-(i+1)])
+    return card_symbols, product
 
 
 # The next two comment lines were from the original 'deuces':

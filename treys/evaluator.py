@@ -42,10 +42,10 @@ class Evaluator(object):
         # if flush
         if cards[0] & cards[1] & cards[2] & cards[3] & cards[4] & 0xF000:
             handOR = (cards[0] | cards[1] | cards[2] | cards[3] | cards[4]) >> 16
-            product = card.product_from_rankbits(handOR)
+            _, product = card.product_from_rankbits(handOR)
             return self.lookup.flush[product]
         else:
-            product = card.product_from_hand(cards)
+            _, product = card.product_from_hand(cards)
             return self.lookup.unsuited[product]
 
     def _six(self, cards):

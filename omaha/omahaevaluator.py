@@ -33,7 +33,10 @@ class OmahaEvaluator(Evaluator):
         all2cardscombos = itertools.combinations(cards[:5], 2)
         all2cardscombos = list(all2cardscombos)
         all2cardscombos = [list(a) for a in all2cardscombos]
-        all5cardscombos = [a + cards[5:] for a in all2cardscombos]
+        boardcombos = itertools.combinations(cards[5:], 3)
+        boardcombos = list(boardcombos)
+        boardcombos = [list[a] for a in boardcombos]
+        all5cardscombos = [a + b for a in all2cardscombos for b in boardcombos]
         for combo in all5cardscombos:
             score = self._five(combo)
             if score < minimum:
