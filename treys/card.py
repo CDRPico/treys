@@ -90,6 +90,29 @@ def get_bitrank_int(card):
 def get_prime(card):
     return card & 0x3F
 
+def get_top_card_symbol(hand):
+    """
+    :param hand: rankbit of a given hand without any repetition
+    :return: the rankbit rep of the top card in the current hand
+    """
+    i = 0
+    while hand >> i != 0:
+        i += 1
+    return 1 << i
+
+def get_symbol_bitrank(card):
+    """
+    :param card: given the symbol (not the suit)
+    :return: the bitrank representation of the card
+    """
+    a = CHAR_RANK_TO_INT_RANK[card]
+    return 1 << a
+
+def count_total_bits(num):
+    # convert number into it's binary and
+    # remove first two characters 0b.
+    binary = bin(num)[2:]
+    return len(binary)
 
 def product_from_hand(cards):
     """

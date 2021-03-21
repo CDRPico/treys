@@ -315,6 +315,42 @@ class LookupTableThreeCards(object):
             for a in sequence:
                 straight_flushes.append(a << i)
 
+        gen = next_word(int('0b1000000000011',2))
+        straight_flushes.append(int('0b1000000000011',2))
+        for i in range(5):
+            f = next(gen)
+            straight_flushes.append(f)
+
+        gen = next_word(int('0b111', 2))
+        straight_flushes.append(int('0b111', 2))
+        for i in range(3):
+            f = next(gen)
+            straight_flushes.append(f)
+
+        flushes = []
+        gen = next_word(int('0b111',2))
+        for i in range(285):
+            f = next(gen)
+            flushes.append(f)
+
+        rank = 1
+        co = 0
+        for sf in straight_flushes:
+            current_cards, product = card.product_from_rankbits(sf)
+            self.flush[product] = rank
+            #TODO: Compute the outs to complete the draw
+            if co == 10:
+                rank += 1
+                co = 0
+            else:
+                co += 1
+
+    def straight_outs(self, cards, top_card):
+        """
+        :param cards: Current 3 cards of the player (given in card symbols)
+        :param top_card: the highest card of the straight we are looking for (rankbit)
+        :return: symbol (in bitrank representation) of the cards the player needs to run
+        """
 
 
 
