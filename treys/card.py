@@ -123,7 +123,7 @@ def product_from_hand(cards):
     i = 0
     for n in cards:
         product *= (n & 0xFF)
-        card_symbols.append(RANKS[-(i+1)])
+        card_symbols.append(RANKS[i])
         i += 1
     return card_symbols, product
 
@@ -155,7 +155,7 @@ def product_from_rankbits(rankbits):
         # if the ith bit is set
         if rankbits & (1 << i):
             product *= PRIMES[i]
-            card_symbols.append(RANKS[-(i+1)])
+            card_symbols.append(RANKS[i])
     return card_symbols, product
 
 

@@ -1,0 +1,5 @@
+TODO:
+Evaluate hands and combos
+By constructing the evaluation of draws at every street I can proceed to generate the algorithms which
+will the generate profitable strategies to play different hands, specially those common situations headed by
+many draws against hands done such as trips or straights

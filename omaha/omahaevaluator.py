@@ -9,7 +9,7 @@ import itertools
 
 
 class OmahaEvaluator(Evaluator):
-    """Evaluate the strenght of hands considering its parent class and the
+    """Evaluate the strength of hands considering its parent class and the
     new features are that hands have 8, 9 and 10 cards at flop, turn and rive"""
 
     def __init__(self):

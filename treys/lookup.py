@@ -250,18 +250,18 @@ class LookupTableThreeCards(object):
     """
        Number of Distinct Combos that can yield the mentioned hand:
 
-       Straight Flush   100 = 5C3 * 10
+       Straight Flush   10 = 5C3 * 10 Some of them generate the same straight, so 10 in total
        Four of a Kind   169 = 13 + 13*12  
        Full Houses      169 = 13 + 13*12  
-       Flush            186 = 13C3 - (5C3 * 10)
+       Flush            222 = 13C3 - (5C3 * 10) +  Repetitions from straight flush draws
        Straight         100 = 5C3 * 10
        Three of a Kind  442 = 13*12 + 13C3    
        Two Pair         442 = 13*12 + 13C3
        One Pair         286 = 13C3      
        -------------------------
-       TOTAL            1894
+       TOTAL            1840
 
-       There are a total of 1894 combos which can improve the current 3 cards hands
+       There are a total of 1840 combos which can improve the current 3 cards hand
        Notice we discard high card, because it is not an interesting case
        We also discard combinations of suits because if they are not suited it is not important
        the suit combination
@@ -269,14 +269,14 @@ class LookupTableThreeCards(object):
        this is a sort of qualification for the existent combos, base on their improvement potential
     """
 
-    MAX_STRAIGHT_FLUSH = 100
-    MAX_FOUR_OF_A_KIND = 269
-    MAX_FULL_HOUSE = 438
-    MAX_FLUSH = 624
-    MAX_STRAIGHT = 724
-    MAX_THREE_OF_A_KIND = 1166
-    MAX_TWO_PAIR = 1608
-    MAX_PAIR = 1894
+    MAX_STRAIGHT_FLUSH = 10
+    MAX_FOUR_OF_A_KIND = 179
+    MAX_FULL_HOUSE = 348
+    MAX_FLUSH = 570
+    MAX_STRAIGHT = 670
+    MAX_THREE_OF_A_KIND = 1112
+    MAX_TWO_PAIR = 1554
+    MAX_PAIR = 1840
 
     def __init__(self):
         self.build()
@@ -337,13 +337,29 @@ class LookupTableThreeCards(object):
         co = 0
         for sf in straight_flushes:
             current_cards, product = card.product_from_rankbits(sf)
-            self.flush[product] = rank
+            exist_key = bool(self.flush.get(product))
+            if exist_key:
+                self.flush[product].append(rank)
+            else:
+                self.flush[product] = [rank]
             #TODO: Compute the outs to complete the draw
-            if co == 10:
+            if co == 9:
                 rank += 1
                 co = 0
             else:
                 co += 1
+
+        # from flushes list we remove those which belong to straight flush draws
+        set_dif = set(flushes) - set(straight_flushes)
+        flushes = list(set_dif)
+        flushes.sort()
+        flushes.reverse()
+
+        rank = LookupTableThreeCards.MAX_FULL_HOUSE + 1
+        for f in flushes:
+            current_cards, product = card.product_from_rankbits(f)
+            self.flush[product] = rank
+            rank += 1
 
     def straight_outs(self, cards, top_card):
         """
