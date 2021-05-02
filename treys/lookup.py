@@ -243,7 +243,7 @@ class LookupTableThreeCards(object):
     Map of draws when having three cards (flop)
     Used to evalute when the player has straight flush, flush, straight backdoor
 
-    TODO: evaluate when user has trips or one pair to get a poker/full
+    TODO: evaluate when player has trips or one pair to get a poker/full
     """
     #all possible combos that can yield each type of hand after the river
 
@@ -254,12 +254,12 @@ class LookupTableThreeCards(object):
        Four of a Kind   169 = 13 + 13*12  
        Full Houses      169 = 13 + 13*12  
        Flush            222 = 13C3 - (5C3 * 10) +  Repetitions from straight flush draws
-       Straight         100 = 5C3 * 10
+       Straight         10 = 5C3 * 10 Some of them generate the same straight, so 10 in total
        Three of a Kind  442 = 13*12 + 13C3    
        Two Pair         442 = 13*12 + 13C3
        One Pair         286 = 13C3      
        -------------------------
-       TOTAL            1840
+       TOTAL            1750
 
        There are a total of 1840 combos which can improve the current 3 cards hand
        Notice we discard high card, because it is not an interesting case
@@ -273,10 +273,10 @@ class LookupTableThreeCards(object):
     MAX_FOUR_OF_A_KIND = 179
     MAX_FULL_HOUSE = 348
     MAX_FLUSH = 570
-    MAX_STRAIGHT = 670
-    MAX_THREE_OF_A_KIND = 1112
-    MAX_TWO_PAIR = 1554
-    MAX_PAIR = 1840
+    MAX_STRAIGHT = 580
+    MAX_THREE_OF_A_KIND = 1022
+    MAX_TWO_PAIR = 1464
+    MAX_PAIR = 1750
 
     def __init__(self):
         self.build()
@@ -361,6 +361,179 @@ class LookupTableThreeCards(object):
             self.flush[product] = rank
             rank += 1
 
+        self.build_straights(straight_flushes)
+
+    def build_straights(self, straights):
+        """
+        Unique five card sets. Straights and highcards.
+        Reuses bit sequences from flush calculations.
+        """
+        rank = LookupTableThreeCards.MAX_FLUSH + 1
+        co = 0
+        for sf in straights:
+            current_cards, product = card.product_from_rankbits(sf)
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            # TODO: Compute the outs to complete the draw
+            if co == 9:
+                rank += 1
+                co = 0
+            else:
+                co += 1
+
+    def build_multiples(self):
+        """
+        Pair, Two Pair, Three of a Kind, Full House, and 4 of a Kind.
+        """
+        backwards_ranks = list(range(13 - 1, -1, -1))
+        # 1) Four of a Kind
+        rank = LookupTableThreeCards.MAX_STRAIGHT_FLUSH + 1
+        # considering the current hand is three of a kind
+        for i in backwards_ranks:
+            product = card.PRIMES[i]**3
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
+
+        # considering the current hand is a pair
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i]**2 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # 2) Full House
+        rank = LookupTableThreeCards.MAX_FOUR_OF_A_KIND + 1
+
+        # considering the current hand is three of a kind
+        for i in backwards_ranks:
+            product = card.PRIMES[i] ** 3
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
+
+        # # considering the current hand is a pair
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i] ** 2 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # 3) Three of a Kind
+        rank = LookupTableThreeCards.MAX_STRAIGHT + 1
+
+        # considering the current hand is three of a kind
+
+        # for i in backwards_ranks:
+        #     product = card.PRIMES[i] ** 3
+        #     exist_key = bool(self.unsuited.get(product))
+        #     if exist_key:
+        #         self.unsuited[product].append(rank)
+        #     else:
+        #         self.unsuited[product] = [rank]
+        #     rank += 1
+
+        # # considering the current hand is a pair
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i] ** 2 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # considering the current does not have any combination (highcard only)
+        gen = itertools.combinations(backwards_ranks,3)
+        for r in gen:
+            c1, c2, c3 = r
+            product = card.PRIMES[c1] * card.PRIMES[c2] * card.PRIMES[c3]
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
+
+        # 4) Two Pairs
+        rank = LookupTableThreeCards.MAX_THREE_OF_A_KIND + 1
+
+        # pick three of one rank
+        for r in backwards_ranks:
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(r)
+            for k in kickers:
+                product = card.PRIMES[i] ** 2 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # considering the current does not have any combination (highcard only)
+        gen = itertools.combinations(backwards_ranks, 3)
+        for r in gen:
+            c1, c2, c3 = r
+            product = card.PRIMES[c1] * card.PRIMES[c2] * card.PRIMES[c3]
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
+
+        # 5) One Pair
+        rank = LookupTableThreeCards.MAX_TWO_PAIR + 1
+
+        # considering the current does not have any combination (highcard only)
+        gen = itertools.combinations(backwards_ranks, 3)
+        for r in gen:
+            c1, c2, c3 = r
+            product = card.PRIMES[c1] * card.PRIMES[c2] * card.PRIMES[c3]
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
+
+
     def straight_outs(self, cards, top_card):
         """
         :param cards: Current 3 cards of the player (given in card symbols)
@@ -368,6 +541,264 @@ class LookupTableThreeCards(object):
         :return: symbol (in bitrank representation) of the cards the player needs to run
         """
 
+
+class LookupTableFourCards(object):
+    """
+    Map of draws when having four cards (turn)
+    Used to evaluate draws after the turn
+
+    """
+    # all possible combos that can yield each type of hand after the river
+
+    """
+       Number of Distinct Combos that can yield the mentioned hand:
+
+       Straight Flush   10 = 5C4 * 10 Some of them generate the same straight, so 10 in total
+       Four of a Kind   156 = [13C2 * 2C1]  
+       Full Houses      312 = [13C2 * 2C1] + [13C2 * 2C1]  
+       Flush            674 = 13C4 - (5C4 * 10) +  Repetitions from straight flush draws
+       Straight         10 = 5C4 * 10 Some of them generate the same straight, so 10 in total
+       Three of a Kind  858 = [13C3 * 3C1]   
+       Two Pair         858 = [13C3 * 3C1]
+       One Pair         715 = 13C4      
+       -------------------------
+       TOTAL            3593
+
+       There are a total of 3593 combos which can improve the current 4 cards hand
+       Notice we discard high card, because it is not an interesting case
+       We also discard combinations of suits because if they are not suited it is not important
+       the suit combination
+
+       this is a sort of qualification for the existent combos, base on their improvement potential
+    """
+
+    MAX_STRAIGHT_FLUSH = 10
+    MAX_FOUR_OF_A_KIND = 166
+    MAX_FULL_HOUSE = 478
+    MAX_FLUSH = 1152
+    MAX_STRAIGHT = 1162
+    MAX_THREE_OF_A_KIND = 2020
+    MAX_TWO_PAIR = 2878
+    MAX_PAIR = 3593
+
+    def __init__(self):
+        self.build()
+
+    def build(self):
+        """
+        Builds member tables from scratch
+        """
+        self.flush = OrderedDict()
+        self.unsuited = OrderedDict()
+        self.build_flushes()  # this will call straights and high cards method + reuse some of the bit sequences
+        self.build_multiples()
+
+    def build_flushes(self):
+        """
+        Straight flushes and flushes.
+
+        Lookup is done on 13 bit integer (2^13 > 7462):
+        xxxbbbbb bbbbbbbb => integer hand index
+        """
+        # straight flushes in rank order
+
+        # we start creating the sequence of cards that draw the same straight flush
+        sequence = [7]  # 7 = int('0b111',2)
+        gen = next_word(sequence[0])
+
+        for i in range(4):
+            f = next(gen)
+            sequence.append(f)
+
+        # Ordering from top to bottom
+        sequence.reverse()
+
+        straight_flushes = []
+        for i in range(8, -1, -1):
+            for a in sequence:
+                straight_flushes.append(a << i)
+
+        gen = next_word(int('0b1000000000111', 2))
+        straight_flushes.append(int('0b1000000000111', 2))
+        for i in range(3):
+            f = next(gen)
+            straight_flushes.append(f)
+
+        straight_flushes.append(int('0b1111', 2))
+
+
+        flushes = []
+        gen = next_word(int('0b1111', 2))
+        for i in range(714):
+            f = next(gen)
+            flushes.append(f)
+
+        rank = 1
+        co = 0
+        for sf in straight_flushes:
+            current_cards, product = card.product_from_rankbits(sf)
+            exist_key = bool(self.flush.get(product))
+            if exist_key:
+                self.flush[product].append(rank)
+            else:
+                self.flush[product] = [rank]
+            # TODO: Compute the outs to complete the draw
+            if co == 9:
+                rank += 1
+                co = 0
+            else:
+                co += 1
+
+        # from flushes list we remove those which belong to straight flush draws
+        set_dif = set(flushes) - set(straight_flushes)
+        flushes = list(set_dif)
+        flushes.sort()
+        flushes.reverse()
+
+        rank = LookupTableFourCards.MAX_FULL_HOUSE + 1
+        for f in flushes:
+            current_cards, product = card.product_from_rankbits(f)
+            self.flush[product] = rank
+            rank += 1
+
+        self.build_straights(straight_flushes)
+
+    def build_straights(self, straights):
+        """
+        Unique five card sets. Straights and highcards.
+        Reuses bit sequences from flush calculations.
+        """
+        rank = LookupTableFourCards.MAX_FLUSH + 1
+        co = 0
+        for sf in straights:
+            current_cards, product = card.product_from_rankbits(sf)
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            # TODO: Compute the outs to complete the draw
+            if co == 9:
+                rank += 1
+                co = 0
+            else:
+                co += 1
+
+    def build_multiples(self):
+        """
+        Pair, Two Pair, Three of a Kind, Full House, and 4 of a Kind.
+        """
+        backwards_ranks = list(range(13 - 1, -1, -1))
+        # 1) Four of a Kind
+        rank = LookupTableFourCards.MAX_STRAIGHT_FLUSH + 1
+        # considering the current hand is three of a kind
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i] ** 3 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+
+        # 2) Full House
+        rank = LookupTableFourCards.MAX_FOUR_OF_A_KIND + 1
+
+        # considering the current hand is three of a kind
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i] ** 3 * card.PRIMES[k]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # considering the current hand is two pairs
+        for i in backwards_ranks:
+            # and for each possible kicker rank
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(i)
+            for k in kickers:
+                product = card.PRIMES[i] ** 2 * card.PRIMES[k] ** 2
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # 3) Three of a Kind
+        rank = LookupTableFourCards.MAX_STRAIGHT + 1
+
+
+        # # considering the current hand is a pair
+        for pairrank in backwards_ranks:
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(pairrank)
+            kgen = itertools.combinations(kickers, 2)
+            for kickers in kgen:
+                k1, k2 = kickers
+                product = card.PRIMES[pairrank]**2 * card.PRIMES[k1] * card.PRIMES[k2]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+
+        # 4) Two Pairs
+        rank = LookupTableFourCards.MAX_THREE_OF_A_KIND + 1
+
+        # # considering the current hand is a pair
+        for pairrank in backwards_ranks:
+            # XXX list hack, was:
+            # kickers = backwards_ranks[:]
+            kickers = list(backwards_ranks)
+            kickers.remove(pairrank)
+            kgen = itertools.combinations(kickers, 2)
+            for kickers in kgen:
+                k1, k2 = kickers
+                product = card.PRIMES[pairrank] ** 2 * card.PRIMES[k1] * card.PRIMES[k2]
+                exist_key = bool(self.unsuited.get(product))
+                if exist_key:
+                    self.unsuited[product].append(rank)
+                else:
+                    self.unsuited[product] = [rank]
+                rank += 1
+
+        # 5) One Pair
+        rank = LookupTableFourCards.MAX_TWO_PAIR + 1
+
+        # considering the current does not have any combination (highcard only)
+        gen = itertools.combinations(backwards_ranks, 4)
+        for r in gen:
+            c1, c2, c3, c4 = r
+            product = card.PRIMES[c1] * card.PRIMES[c2] * card.PRIMES[c3] * card.PRIMES[c4]
+            exist_key = bool(self.unsuited.get(product))
+            if exist_key:
+                self.unsuited[product].append(rank)
+            else:
+                self.unsuited[product] = [rank]
+            rank += 1
 
 
 def next_word(bits):
